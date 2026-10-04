@@ -1,124 +1,93 @@
-# Mental Health Risk Predictor
+<div align="center">
 
-[![Watch Presentation](https://img.shields.io/badge/Watch-YouTube-red)](https://youtu.be/VCkYcj3GoHY)
-[![Dataset (Kaggle)](https://img.shields.io/badge/Dataset-Kaggle-blue)](https://www.kaggle.com/datasets/bhavikjikadara/mental-health-dataset)
+# 🧠 Mental Health Risk Modeling
 
----
+**Multiclass (Low / Medium / High) mental health risk prediction from survey data, with three models compared and a Gradio demo app.**
 
-This repository contains a machine learning pipeline and Gradio-based web interface for predicting mental health risk levels using various classification models. The project is part of a capstone assignment and leverages structured clinical and behavioral data to assess mental health risk categories: Low, Medium, and High.
+![Python](https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white)
+![TensorFlow](https://img.shields.io/badge/TensorFlow%20%2F%20Keras-FF6F00?logo=tensorflow&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?logo=scikitlearn&logoColor=white)
+![Gradio](https://img.shields.io/badge/Gradio-UI-F97316)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue)
+![Capstone](https://img.shields.io/badge/USD%20AAI--590-Capstone-002855)
+[![Video](https://img.shields.io/badge/Watch-YouTube-red?logo=youtube)](https://youtu.be/VCkYcj3GoHY)
+[![Dataset](https://img.shields.io/badge/Dataset-Kaggle-20BEFF?logo=kaggle&logoColor=white)](https://www.kaggle.com/datasets/bhavikjikadara/mental-health-dataset)
 
-## 🧠 Project Overview
+</div>
 
-We evaluate three classification approaches for multiclass risk prediction:
+## Overview
+Mental health care often starts too late. This capstone asks whether a short set of survey answers can flag who is at **low, medium, or high risk**, so outreach can start earlier. Risk labels were built with **K-Modes clustering**. The five features that most strongly defined the clusters were then **removed before modeling** to avoid label leakage. That also tests whether risk can still be predicted when social and lifestyle data is missing.
 
-- **Logistic Regression** — interpretable baseline  
-- **TabNet-inspired Tabular Neural Network** — non-linear pattern learning  
-- **Soft Voting Ensemble** — stability via averaged probabilities
+## Key results
+Test set: **78,296 respondents** (held-out split). The numbers come from the `classification_report` output in each notebook and from `images/results/model_metrics_table.jpg`.
 
-Key metrics include Accuracy, Macro F1, and ROC AUC. An interactive **Gradio** UI provides live predictions for demo purposes.
+| Model | Accuracy | Macro F1 | ROC AUC (micro) |
+|---|:-:|:-:|:-:|
+| Logistic Regression (poly features + elastic net) | 0.73 | 0.73 | 0.84 |
+| Soft Voting Ensemble | 0.78 | 0.78 | 0.93 |
+| **TabNet-inspired Tabular NN (tuned)** | **0.79** | **0.78** | **0.94** |
 
----
+- The TabNet-style network was tuned over a 54-configuration grid (steps × feature dim × batch size × learning rate). Its best validation accuracy was **0.787**.
+- **Mood swings, coping struggles, and treatment history** were the strongest risk signals in the bivariate analysis.
 
-## 📁 Project Structure
+<p align="center"><img src="images/results/Final%20Model%20Comparison%20Bar%20chart.png" width="620" alt="Model comparison"></p>
 
+## Approach
+```mermaid
+flowchart LR
+  A[Kaggle survey data] --> B[Cleaning + EDA<br/>drop small / skewed countries]
+  B --> C[K-Modes clustering<br/>→ risk labels]
+  C --> D[Feature selection<br/>chi-square, Cramér's V]
+  D --> E1[Logistic Regression]
+  D --> E2[TabNet-inspired NN]
+  E1 & E2 --> E3[Soft Voting Ensemble]
+  E1 & E2 & E3 --> F[Evaluation<br/>F1, ROC AUC]
+  F --> G[Gradio demo]
 ```
-├── data-assets/                                      # CSV and PKL files for training/testing
-│   ├── Mental Health Dataset.csv
-│   ├── cleaned_mental_health_data.csv
-│   ├── X_train.csv / X_test.csv
-│   ├── y_train.csv / y_test.csv
-│   └── Encoded + Scaled variants (.pkl / .csv)
-│
-├── images/                                           # Visuals used for reporting and evaluation
-│
-├── notebook-pipeline/                                # Pipeline Order          
+
+<details><summary>Workflow diagram and TabNet ROC curve</summary>
+
+<img src="images/workflow/Mental%20Health%20Pipeline%20Infrastructure.drawio.png" width="300" alt="Workflow">
+<img src="images/tabular_nn/roc%20curve%20-%20tabnet.png" width="480" alt="TabNet ROC">
+
+</details>
+
+## Dataset
+[Mental Health Dataset (Kaggle)](https://www.kaggle.com/datasets/bhavikjikadara/mental-health-dataset): self-reported survey responses covering gender, country, occupation, family history, treatment, stress, mood, and coping. After cleaning there are **260,986 rows**, split into 182,690 for training and 78,296 for testing. The final model uses **8 features**. The raw, cleaned, and encoded splits are all in `data-assets/`.
+
+## Tech stack
+Python · pandas · NumPy · scikit-learn · TensorFlow/Keras · Optuna · XGBoost · SciPy · Matplotlib/Seaborn · Gradio · joblib
+
+## Repository structure
+```
+mental-health-risk-modeling/
+├── data-assets/            # raw, cleaned, split and encoded datasets (.csv / .pkl)
+├── images/                 # EDA, preprocessing, model and results figures
+├── notebook-pipeline/
 │   ├── clean_filtered_eda.ipynb
 │   ├── split_preprocessing.ipynb
-│   └── models/
-│       ├── logistic-regression/
-│       │   └── logistic_regression_model.ipynb
-│       ├── tab-neural-network/
-│       │   └── tabular_neural_network_hypertuned.ipynb
-│       └── soft-voting/
-│            └── soft_voting_model.ipynb
-│
-├── user-interface/
-│   ├── mental_health_risk_predictor_logistic.ipynb    # Logistic/Ensemble UI
-│   ├── mental_health_risk_predictor_TNN.ipynb         # TabNet Neural Net UI
-│   └── gradio interface.pdf
-│
-└── README.md
+│   └── models/             # logistic-regression/, tab-neural-network/, soft-voting/
+├── user-interface/         # Gradio apps (logistic + TNN) and UI screenshots (PDF)
+├── requirements.txt
+└── LICENSE
 ```
 
----
+## How to run
+```bash
+git clone https://github.com/oxayavongsa/mental-health-risk-modeling.git
+cd mental-health-risk-modeling
+pip install -r requirements.txt
+jupyter notebook notebook-pipeline/clean_filtered_eda.ipynb
+```
+Run the notebooks in this order: `clean_filtered_eda` → `split_preprocessing` → each model in `notebook-pipeline/models/`. They were written in Google Colab and load data from Google Drive paths. Before running them locally, point those paths at `data-assets/`.
 
-## 🚀 How to Run
+**Demo UI:** open `user-interface/mental_health_risk_predictor_logistic.ipynb` with `logistic_pipeline_model.pkl` in the working directory, or open `mental_health_risk_predictor_TNN.ipynb` with `tabnet_grad_3.keras`. Both model files are in `notebook-pipeline/models/`.
 
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/oxayavongsa/aai-590-capstone-mental-health.git
-   cd aai-590-capstone-mental-health
-   ```
+> **Intended use:** this is a research and education project. It supports professional judgment and is **not** a diagnostic tool.
 
-2. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Run Notebooks**<br>
-   Launch any of the model training notebooks:
-   - `notebook-pipeline/models/logistic-regression/logistic_regression_model.ipynb` [![Open in Colab — Logistic Regression](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/oxayavongsa/aai-590-capstone-mental-health/blob/main/notebook-pipeline/models/logistic-regression/logistic_regression_model.ipynb "Open in Colab: Logistic Regression notebook")
-   - `notebook-pipeline/models/soft-voting/soft_voting_model.ipynb`[![Open In Colab - Soft Voting](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/oxayavongsa/aai-590-capstone-mental-health/blob/main/notebook-pipeline/models/soft-voting/soft_voting_model.ipynb)
-   - `notebook-pipeline/models/tab-neural-network/tabular_neural_network_hypertuned.ipynb` [![Open In Colab - TabNet](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/oxayavongsa/aai-590-capstone-mental-health/blob/main/notebook-pipeline/models/tab-neural-network/tabular_neural_network_hypertuned.ipynb)
-
-   **Launch the demo Gradio** [![Watch Presentation](https://img.shields.io/badge/Watch-YouTube-red)](https://youtu.be/VCkYcj3GoHY?t=473)<br>
-   Run one of the UI notebooks:
-   - `user-interface/mental_health_risk_predictor_logistic.ipynb` 
-   - `user-interface/mental_health_risk_predictor_TNN.ipynb`
+## Team & credits
+AAI-590 Capstone, Shiley-Marcos School of Engineering, University of San Diego.
+**Outhai Xayavongsa** (Team Lead) · Aaron Ramirez (Tech Lead) · Prema Mallikarjunan. Advised by Professor Anna Marbut.
 
 ---
-
-## 📊 Model Performance Highlights
-
-<img width="1189" height="590" alt="Final Model Comparison Bar chart" src="https://github.com/user-attachments/assets/a90c0988-9d34-40d6-8bf4-03edc1e4a763" /><br>
-
-| Model                | Accuracy | Macro F1 | ROC AUC (Micro) | Generalization |
-|---------------------|----------|----------|------------------|----------------|
-| Logistic Regression | 0.73     | 0.73     | 0.84             | Good           |
-| Soft Voting         | 0.78     | 0.78     | 0.93             | Very Good      |
-| TabNet-Inspired     | 0.79     | 0.78     | 0.94             | Excellent      |
-
----
-
-## 🎯 Key Features
-
-- **Multiclass Classification** of mental health risks (Low, Medium, High)
-- **Advanced Feature Engineering** using clinical and behavioral indicators
-- **Interactive Gradio Interface** for real-time prediction
-- **Model Interpretability** included with feature importance analysis
-
----
-
-## ⚖️ Ethics & Intended Use
-Ethics & intended use
-All examples use **anonymous** data. The system supports professional judgment and should not be used to make medical diagnoses. For any real deployment, use informed consent, privacy safeguards, access control, and bias monitoring.
-
----
-
-## 📌 Dependencies
-
-See [`requirements.txt`](./requirements.txt) for a complete list.
-
----
-
-## 📚 License
-
-This project is licensed under the [Apache License](./LICENSE).
-
----
-
-## 🙌 Acknowledgements
-
-- This capstone was completed in AAI-590 within the Shiley-Marcos School of Engineering at the University of San Diego.
-- Team: Outhai Xayavongsa (Team Lead), Aaron Ramirez (Tech Lead), and Prema Mallikarjunan.
-- We thank Professor Anna Marbut for her guidance and mentorship.
+<sub>Maintained by **Outhai (Thai) Xayavongsa** (MS Applied AI, University of San Diego · MBA) · [GitHub](https://github.com/oxayavongsa) · [Portfolio](https://oxayavongsa.github.io/ai-automation-portfolio/)</sub>
